@@ -2851,12 +2851,13 @@
         // Application Data Management
         class DataManager {
             constructor() {
-                this.casesData = LocalStorage.load('casesData', []);
-                this.defendantsData = LocalStorage.load('defendantsData', []);
-                this.lawyersData = LocalStorage.load('lawyersData', []);
-                this.deductionsData = LocalStorage.load('deductionsData', []);
-                this.notificationsData = LocalStorage.load('notificationsData', []);
-                this.settingsData = LocalStorage.load('settingsData', this.getDefaultSettings());
+                // Ensure arrays are properly initialized
+                this.casesData = this.ensureArray(LocalStorage.load('casesData', []));
+                this.defendantsData = this.ensureArray(LocalStorage.load('defendantsData', []));
+                this.lawyersData = this.ensureArray(LocalStorage.load('lawyersData', []));
+                this.deductionsData = this.ensureArray(LocalStorage.load('deductionsData', []));
+                this.notificationsData = this.ensureArray(LocalStorage.load('notificationsData', []));
+                this.settingsData = LocalStorage.load('settingsData', this.getDefaultSettings()) || this.getDefaultSettings();
                 
                 this.filteredCases = [...this.casesData];
                 this.filteredDefendants = [...this.defendantsData];
@@ -2865,6 +2866,10 @@
                 
                 this.currentCase = null;
                 this.uploadedFiles = [];
+            }
+
+            ensureArray(data) {
+                return Array.isArray(data) ? data : [];
             }
 
             getDefaultSettings() {
@@ -3326,6 +3331,9 @@
 
         // Initialize Data Manager
         const dataManager = new DataManager();
+        
+        // Make dataManager available globally
+        window.dataManager = dataManager;
 
         // Utility Functions
         function getStatusBadgeClass(status) {
@@ -5175,25 +5183,45 @@
         }
 
         function loadSettings() {
+            if (!window.dataManager) {
+                console.warn('DataManager not initialized yet, skipping loadSettings');
+                return;
+            }
+            
             const settings = dataManager.settingsData;
             
-            document.getElementById('office-name').value = settings.officeName || '';
-            document.getElementById('office-address').value = settings.officeAddress || '';
-            document.getElementById('office-phone').value = settings.officePhone || '';
+            const officeNameEl = document.getElementById('office-name');
+            const officeAddressEl = document.getElementById('office-address');
+            const officePhoneEl = document.getElementById('office-phone');
             
-            document.getElementById('auto-notifications').checked = settings.autoNotifications;
-            document.getElementById('hearing-notifications').checked = settings.hearingNotifications;
-            document.getElementById('monthly-reports').checked = settings.monthlyReports;
-            document.getElementById('notification-days').value = settings.notificationDays || 3;
+            if (officeNameEl) officeNameEl.value = settings.officeName || '';
+            if (officeAddressEl) officeAddressEl.value = settings.officeAddress || '';
+            if (officePhoneEl) officePhoneEl.value = settings.officePhone || '';
             
-            document.getElementById('system-language').value = settings.systemLanguage || 'ar';
-            document.getElementById('date-type').value = settings.dateType || 'gregorian';
-            document.getElementById('auto-save').checked = settings.autoSave;
-            document.getElementById('auto-save-interval').value = settings.autoSaveInterval || 5;
-            document.getElementById('daily-backup').checked = settings.dailyBackup;
+            const autoNotificationsEl = document.getElementById('auto-notifications');
+            const hearingNotificationsEl = document.getElementById('hearing-notifications');
+            const monthlyReportsEl = document.getElementById('monthly-reports');
+            const notificationDaysEl = document.getElementById('notification-days');
+            const systemLanguageEl = document.getElementById('system-language');
+            const dateTypeEl = document.getElementById('date-type');
+            const autoSaveEl = document.getElementById('auto-save');
+            const autoSaveIntervalEl = document.getElementById('auto-save-interval');
+            const dailyBackupEl = document.getElementById('daily-backup');
+            const lastBackupDateEl = document.getElementById('last-backup-date');
             
-            if (settings.lastBackupDate) {
-                document.getElementById('last-backup-date').textContent = dataManager.formatDate(settings.lastBackupDate) + ' - ' + new Date(settings.lastBackupDate).toLocaleTimeString('ar-SA');
+            if (autoNotificationsEl) autoNotificationsEl.checked = settings.autoNotifications;
+            if (hearingNotificationsEl) hearingNotificationsEl.checked = settings.hearingNotifications;
+            if (monthlyReportsEl) monthlyReportsEl.checked = settings.monthlyReports;
+            if (notificationDaysEl) notificationDaysEl.value = settings.notificationDays || 3;
+            
+            if (systemLanguageEl) systemLanguageEl.value = settings.systemLanguage || 'ar';
+            if (dateTypeEl) dateTypeEl.value = settings.dateType || 'gregorian';
+            if (autoSaveEl) autoSaveEl.checked = settings.autoSave;
+            if (autoSaveIntervalEl) autoSaveIntervalEl.value = settings.autoSaveInterval || 5;
+            if (dailyBackupEl) dailyBackupEl.checked = settings.dailyBackup;
+            
+            if (settings.lastBackupDate && lastBackupDateEl) {
+                lastBackupDateEl.textContent = dataManager.formatDate(settings.lastBackupDate) + ' - ' + new Date(settings.lastBackupDate).toLocaleTimeString('ar-SA');
             }
         }
 
@@ -5322,8 +5350,7 @@
 
     <script src="app-complete.js"></script>
 <script src="firebase-integration-v4.js"></script>
-<!-- في نهاية ملف index.html قبل إغلاق tag body -->
-<script src="multi-device-sync.js"></script>
-
+ 
+ 
 </body>
 </html>
